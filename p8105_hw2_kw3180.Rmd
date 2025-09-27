@@ -7,6 +7,7 @@ output: github_document
 
 ```{r setup, message=FALSE}
 library(tidyverse)
+library(readxl)
 ```
 # Question 1
 
@@ -24,26 +25,72 @@ pols_month_df =
           president < 0 ~ "dem")) |> 
     select(-prez_gop, -prez_dem, -day)
 ```
+
 Clean the snp.csv data
 ```{r}
 snp_df = 
     read_csv("fivethirtyeight_datasets/snp.csv") |> 
     separate(date, into = c("month", "day", "year"), convert = TRUE) |> 
-    mutate(month = month.name[month]) |> 
+    mutate(month = month.name[month],
+           year = case_when(
+             year <= 15 ~ year + 2000,
+             year > 15 ~ year + 1900
+           )) |> 
     select(year, month, close, -day)
 ```
+
 Clean the unemployment data
 
 ```{r}
 unemployed_df = 
     read_csv("fivethirtyeight_datasets/unemployment.csv") |> 
+    janitor::clean_names() |> 
     pivot_longer(
-      cols = Jan:Dec,
+      cols = jan:dec,
       names_to  = "month",
-      values_to = "unemployment percent"
+      values_to = "unemployment_percent"
     ) |> 
     mutate(
-        month = month.name[match(month, month.abb)] 
+        month = month.name[match(str_to_title(month), month.abb)]
     )
 ```
+
+Join pols_month_df and snp_df
+
+```{r}
+pols_snp_df = 
+    left_join(pols_month_df, snp_df, by = c("year", "month")) |> 
+    select (year, month, president, close, everything())
+    
+```
+Merge unemployed_df with pols_month_df
+
+```{r}
+pols_snp_unemploy_df = 
+    left_join(pols_snp_df, unemployed_df, by = c("year", "month")) |> 
+     select (year, month, president, close, unemployment_percent, everything())
+```
+
+
+# Question 2 
+
+Clean Mr. Trash Wheel
+```{r}
+trash_df = 
+    read_excel("202409 Trash Wheel Collection Data.xlsx", 
+                      sheet = "Mr. Trash Wheel",
+                      range = "A2:N653",
+                      na = c("na", ".", "")) |> 
+    janitor::clean_names() |> 
+    drop_na(dumpster) |> 
+    mutate(
+      sports_balls = as.integer(round(sports_balls)))
+
+```
+
+Clean Professor Trash Wheel
+```{r}
+
+```
+
 
