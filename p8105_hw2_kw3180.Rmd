@@ -5,7 +5,45 @@ date: "2025-09-26"
 output: github_document
 ---
 
-```{r}
+```{r setup, message=FALSE}
+library(tidyverse)
+```
+# Question 1
 
+Clean the data in pols-month.csv:
+
+```{r}
+pols_month_df = 
+    read_csv("fivethirtyeight_datasets/pols-month.csv") |> 
+    janitor::clean_names() |> 
+    separate(mon, into = c("year", "month", "day"), convert = TRUE) |> 
+    mutate(month = month.name[month],
+      president = prez_gop - prez_dem,
+      president = case_when(
+          president > 0 ~ "gop",
+          president < 0 ~ "dem")) |> 
+    select(-prez_gop, -prez_dem, -day)
+```
+Clean the snp.csv data
+```{r}
+snp_df = 
+    read_csv("fivethirtyeight_datasets/snp.csv") |> 
+    separate(date, into = c("month", "day", "year"), convert = TRUE) |> 
+    mutate(month = month.name[month]) |> 
+    select(year, month, close, -day)
+```
+Clean the unemployment data
+
+```{r}
+unemployed_df = 
+    read_csv("fivethirtyeight_datasets/unemployment.csv") |> 
+    pivot_longer(
+      cols = Jan:Dec,
+      names_to  = "month",
+      values_to = "unemployment percent"
+    ) |> 
+    mutate(
+        month = month.name[match(month, month.abb)] 
+    )
 ```
 
