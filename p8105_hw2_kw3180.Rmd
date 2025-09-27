@@ -77,7 +77,7 @@ pols_snp_unemploy_df =
 
 Clean Mr. Trash Wheel
 ```{r}
-trash_df = 
+mrtrash_df = 
     read_excel("202409 Trash Wheel Collection Data.xlsx", 
                       sheet = "Mr. Trash Wheel",
                       range = "A2:N653",
@@ -91,7 +91,24 @@ trash_df =
 
 Clean Professor Trash Wheel
 ```{r}
+prof_trash_df =
+    read_excel("202409 Trash Wheel Collection Data.xlsx",
+                    sheet = "Professor Trash Wheel",
+                    range = "A2:M120",
+                    na = c(".", "NA", "")) |> 
+    janitor::clean_names() |> 
+    drop_na(dumpster) 
+```
 
+Clean Gwynnda Trash Wheel
+```{r}
+gwynnda_df = 
+    read_excel("202409 Trash Wheel Collection Data.xlsx",
+                  sheet = "Gwynnda Trash Wheel",
+                  range = "A2:L265",
+                  na = c(".", "NA", "")) |> 
+    janitor::clean_names() |> 
+    drop_na(dumpster)
 ```
 
 
