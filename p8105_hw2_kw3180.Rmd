@@ -22,7 +22,8 @@ pols_month_df =
       president = prez_gop - prez_dem,
       president = case_when(
           president > 0 ~ "gop",
-          president < 0 ~ "dem")) |> 
+          president < 0 ~ "dem"),
+      year = as.numeric(year)) |> 
     select(-prez_gop, -prez_dem, -day)
 ```
 
