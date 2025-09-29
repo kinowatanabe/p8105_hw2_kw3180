@@ -70,7 +70,7 @@ Merge unemployed_df with pols_month_df
 ```{r}
 pols_snp_unemploy_df = 
     left_join(pols_snp_df, unemployed_df, by = c("year", "month")) |> 
-     select (year, month, president, close, unemployment_percent, everything())
+    select (year, month, president, close, unemployment_percent, everything())
 ```
 
 
@@ -119,12 +119,22 @@ gwynnda_df =
     select(month, year, date, data, everything(), -dumpster)
 ```
 
-Bind the datasets together
+Bind the data sets together
 
 ```{r}
 bind_trash_df = 
     bind_rows(mrtrash_df, prof_trash_df, gwynnda_df) |> 
     janitor::clean_names()
 ```
+
+* In the combined data set of Mr. Trash, Professor Trash, and Gwynnda called bind_trash_df, there are `r nrow(bind_trash_df)` observations and `r ncol(bind_trash_df)` variables. The key variables include the times of data collection (`month`, `year`, `date`), the trash wheel data set identifier (`data`), the weight of trash in tons (`weight_tons`), and trash counts (`plastic_bottles`, `polystyrene`, `cigarette_butts`, `glass_bottles`, `plastic_bags`, `wrappers`, and `sports_balls`).
+
+* The total weight of trash collected by Professor Trash Wheel is `r bind_trash_df |> filter(data == "prof_trash") |> summarise(total_weight = sum(weight_tons, na.rm = TRUE))|> pull(total_weight)` tons.
+
+* The total number of cigarette butts collected by Gwynnda in June of 2022 is
+`r bind_trash_df |>  filter(data == "gwynnda", year == 2022, month == "June") |>  summarise(cignum = sum(cigarette_butts, na.rm = TRUE)) |> pull(cignum)` butts.
+
+
+
 
 
