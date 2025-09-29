@@ -31,6 +31,7 @@ Clean the snp.csv data
 ```{r}
 snp_df = 
     read_csv("fivethirtyeight_datasets/snp.csv") |> 
+    janitor::clean_names() |> 
     separate(date, into = c("month", "day", "year"), convert = TRUE) |> 
     mutate(month = month.name[month],
            year = case_when(
@@ -56,7 +57,7 @@ unemployed_df =
     )
 ```
 
-Join pols_month_df and snp_df
+Merge pols_month_df and snp_df
 
 ```{r}
 pols_snp_df = 
@@ -83,10 +84,11 @@ mrtrash_df =
                       range = "A2:N653",
                       na = c("na", ".", "")) |> 
     janitor::clean_names() |> 
-    drop_na(dumpster) |> 
     mutate(
-      sports_balls = as.integer(round(sports_balls)))
-
+      sports_balls = as.integer(round(sports_balls)),
+      data = "mrtrash",
+      year = as.numeric(year)) |> 
+      select(month, year, date, data, everything(), -dumpster)
 ```
 
 Clean Professor Trash Wheel
@@ -97,7 +99,10 @@ prof_trash_df =
                     range = "A2:M120",
                     na = c(".", "NA", "")) |> 
     janitor::clean_names() |> 
-    drop_na(dumpster) 
+    mutate(
+        data = "prof_trash"
+    ) |> 
+    select(month, year, date, data, everything(), -dumpster)
 ```
 
 Clean Gwynnda Trash Wheel
@@ -108,7 +113,10 @@ gwynnda_df =
                   range = "A2:L265",
                   na = c(".", "NA", "")) |> 
     janitor::clean_names() |> 
-    drop_na(dumpster)
+    mutate(
+        data = "gwynnda"
+    ) |> 
+    select(month, year, date, data, everything(), -dumpster)
 ```
 
 
