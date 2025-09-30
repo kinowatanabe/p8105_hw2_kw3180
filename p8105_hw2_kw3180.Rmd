@@ -11,7 +11,7 @@ library(readxl)
 ```
 # Question 1
 
-Clean the data in pols-month.csv:
+### Clean the data in pols-month.csv:
 
 ```{r}
 pols_month_df = 
@@ -27,7 +27,7 @@ pols_month_df =
     select(-prez_gop, -prez_dem, -day)
 ```
 
-Clean the snp.csv data
+### Clean the snp.csv data
 ```{r}
 snp_df = 
     read_csv("fivethirtyeight_datasets/snp.csv") |> 
@@ -41,7 +41,7 @@ snp_df =
     select(year, month, close, -day)
 ```
 
-Clean the unemployment data
+### Clean the unemployment data
 
 ```{r}
 unemployed_df = 
@@ -57,7 +57,7 @@ unemployed_df =
     )
 ```
 
-Merge pols_month_df and snp_df
+### Merge pols_month_df and snp_df
 
 ```{r}
 pols_snp_df = 
@@ -65,7 +65,7 @@ pols_snp_df =
     select (year, month, president, close, everything())
     
 ```
-Merge unemployed_df with pols_month_df
+### Merge unemployed_df with pols_month_df
 
 ```{r}
 pols_snp_unemploy_df = 
@@ -76,12 +76,12 @@ pols_snp_unemploy_df =
 
 # Question 2 
 
-Clean Mr. Trash Wheel
+### Clean Mr. Trash Wheel
 ```{r}
 mrtrash_df = 
-    read_excel("202409 Trash Wheel Collection Data.xlsx", 
+    read_excel("202509 Trash Wheel Collection Data.xlsx", 
                       sheet = "Mr. Trash Wheel",
-                      range = "A2:N653",
+                      range = "A2:N709",
                       na = c("na", ".", "")) |> 
     janitor::clean_names() |> 
     mutate(
@@ -91,12 +91,12 @@ mrtrash_df =
       select(month, year, date, data, everything(), -dumpster)
 ```
 
-Clean Professor Trash Wheel
+### Clean Professor Trash Wheel
 ```{r}
 prof_trash_df =
-    read_excel("202409 Trash Wheel Collection Data.xlsx",
+    read_excel("202509 Trash Wheel Collection Data.xlsx",
                     sheet = "Professor Trash Wheel",
-                    range = "A2:M120",
+                    range = "A2:M134",
                     na = c(".", "NA", "")) |> 
     janitor::clean_names() |> 
     mutate(
@@ -105,25 +105,25 @@ prof_trash_df =
     select(month, year, date, data, everything(), -dumpster)
 ```
 
-Clean Gwynnda Trash Wheel
+### Clean Gwynns Falls Wheel Trash Wheel
 ```{r}
-gwynnda_df = 
-    read_excel("202409 Trash Wheel Collection Data.xlsx",
-                  sheet = "Gwynnda Trash Wheel",
-                  range = "A2:L265",
+gwynns_df = 
+    read_excel("202509 Trash Wheel Collection Data.xlsx",
+                  sheet = "Gwynns Falls Trash Wheel",
+                  range = "A2:L351",
                   na = c(".", "NA", "")) |> 
     janitor::clean_names() |> 
     mutate(
-        data = "gwynnda"
+        data = "gwynns"
     ) |> 
     select(month, year, date, data, everything(), -dumpster)
 ```
 
-Bind the data sets together
+### Bind the data sets together
 
 ```{r}
 bind_trash_df = 
-    bind_rows(mrtrash_df, prof_trash_df, gwynnda_df) |> 
+    bind_rows(mrtrash_df, prof_trash_df, gwynns_df) |> 
     janitor::clean_names() |> 
     arrange(date)
 ```
@@ -132,25 +132,26 @@ bind_trash_df =
 
 * The total weight of trash collected by Professor Trash Wheel is `r bind_trash_df |> filter(data == "prof_trash") |> summarise(total_weight = sum(weight_tons, na.rm = TRUE))|> pull(total_weight)` tons.
 
-* The total number of cigarette butts collected by Gwynnda in June of 2022 is
-`r bind_trash_df |>  filter(data == "gwynnda", year == 2022, month == "June") |>  summarise(cignum = sum(cigarette_butts, na.rm = TRUE)) |> pull(cignum)` butts.
+* The total number of cigarette butts collected by Gwynns Falls in June of 2022 is
+`r bind_trash_df |>  filter(data == "gwynns", year == 2022, month == "June") |>  summarise(cignum = sum(cigarette_butts, na.rm = TRUE)) |> pull(cignum)` butts.
 
 
 # Question 3
 
-Load Zip Codes
+### Load Zip Codes
 ```{r}
 zip_codes_df = 
     read_csv("zillow_data/Zip Codes.csv", na = c(".","NA","")) |> 
     janitor::clean_names() |> 
     mutate(county = 
              case_match(county,
-                        "New York" ~ "Manhattan", .default = county)) |> 
+                        "New York" ~ "Manhattan", .default = county),
+            zip_code = as.character(zip_code)) |> 
     select(county, zip_code, neighborhood, everything())
     
 ```
 
-Load Zillow Observed Rent Index (ZORI) in New York City between January 2015 and August 2024
+### Load Zillow Observed Rent Index (ZORI) in New York City between January 2015 and August 2024
 ```{r}
 zori_df = 
       read_csv("zillow_data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv", 
@@ -166,20 +167,42 @@ zori_df =
         names_prefix = "x") |> 
       mutate(county = replace(county, county == "New York County", "Manhattan"),
             county = str_replace(county, " County", ""),
-            zip_code = as.numeric(zip_code),
+            zip_code = as.character(zip_code),
             date = as.Date(str_replace_all(date, "_", "-"), format = "%Y-%m-%d")) |> 
         select(county, zip_code, date, rental_price, everything(),-state_name) |> 
         arrange(date)
 ```
-
+### Merge zori_df and zip_codes_df
 We want to priortize zori_df with the date and price information. We will now merge zori_df and zip_codes_df.
 
 ```{r}
 zip_zori_df = 
-  left_join(zori_df, zip_codes_df, by = c("zip_code", "county")) |> 
-  select(zip_code, county, neighborhood, date, rental_price, everything())
+  left_join(zori_df, zip_codes_df, by =c("zip_code", "county")) |> 
+  select(county, zip_code, neighborhood, date, rental_price, everything()) |> 
+  arrange(county, zip_code, date)
+```
+Make a table to compare rental prices in January 2021 to prices in January 2020
+```{r}
+zip_zori_sep_df <-zip_zori_df |> 
+  separate(date, into = c("year", "month", "day"), convert = TRUE) |> 
+  filter(year %in% c(2020, 2021), month == 1, day == 31) |> 
+  select(zip_code, county, neighborhood, year, month, rental_price) |>
+  pivot_wider(
+    names_from = year,
+    values_from = rental_price) |> 
+  mutate(price_diff = `2021` - `2020`) |> 
+  arrange(price_diff) |> slice_head(n = 10)
 ```
 
+* There are `r nrow(zip_zori_df)` observations and `r ncol(zip_zori_df)` variables. There are key variables, such as `county`, `zip_code`, `neighborhood`, `date`, and `rental_price`.
+* In `zip_zori_df`, there are `r zip_zori_df |> summarise(unique_zips = n_distinct(zip_code)) |> pull(unique_zips)` unique zip codes and `r zip_zori_df |> summarise(unique_neigh = n_distinct(neighborhood)) |>  pull(unique_neigh)` unique neighborhoods.
 
+* `r zip_codes_df |> anti_join(zori_df, by = "zip_code") |> nrow()` ZIP codes appear in the ZIP code dataset but not in the Zillow Rental Price dataset. 
+    * These are the zipcodes below: `r zip_codes_df |> anti_join(zori_df, by = "zip_code") |> pull(zip_code)`
+    * Some of these zipcodes in `zip_codes_df` aren't in `zori_df` becuase they are in commercial, financial, and government areas, such as around the World Trade Center (10048), the NY Stock Exchange (10043), and JFK airport (11430). These are nonresidential, so they are excluded from Zillow.
 
+```{r}
+zip_zori_sep_df |>  knitr::kable()
+```
 
+* In general, rental prices in January 2021 to prices in January 2020 dropped
