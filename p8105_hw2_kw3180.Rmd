@@ -133,7 +133,7 @@ bind_trash_df =
 * The total weight of trash collected by Professor Trash Wheel is `r bind_trash_df |> filter(data == "prof_trash") |> summarise(total_weight = sum(weight_tons, na.rm = TRUE))|> pull(total_weight)` tons.
 
 * The total number of cigarette butts collected by Gwynns Falls in June of 2022 is
-`r bind_trash_df |>  filter(data == "gwynns", year == 2022, month == "June") |>  summarise(cignum = sum(cigarette_butts, na.rm = TRUE)) |> pull(cignum)` butts.
+`r bind_trash_df |>  filter(data == "gwynns", year == 2022, month == "June") |>  summarise(cignum = sum(cigarette_butts, na.rm = TRUE)) |> pull(cignum) |> format(scientific = FALSE)` butts.
 
 
 # Question 3
@@ -147,7 +147,7 @@ zip_codes_df =
              case_match(county,
                         "New York" ~ "Manhattan", .default = county),
             zip_code = as.character(zip_code)) |> 
-    select(county, zip_code, neighborhood, everything())
+    select(county, zip_code, neighborhood, everything(), -state_fips, - county_code, -county_fips, - file_date)
     
 ```
 
@@ -195,7 +195,7 @@ zip_zori_sep_df <-zip_zori_df |>
 ```
 
 * There are `r nrow(zip_zori_df)` observations and `r ncol(zip_zori_df)` variables. There are key variables, such as `county`, `zip_code`, `neighborhood`, `date`, and `rental_price`. We are able to see 
-* In `zip_zori_df`, there are `r zip_zori_df |> summarise(unique_zips = n_distinct(zip_code)) |> pull(unique_zips)` unique zip codes and `r zip_zori_df |> summarise(unique_neigh = n_distinct(neighborhood)) |>  pull(unique_neigh)` unique neighborhoods.
+* In `zip_zori_df`, there are `r zip_zori_df |> summarise(unique_zips = n_distinct(zip_code)) |> pull(unique_zips)` unique zip codes and `r zip_zori_df |> drop_na(neighborhood) |> summarise(unique_neigh = n_distinct(neighborhood)) |>  pull(unique_neigh)` unique neighborhoods.
 
 * `r zip_codes_df |> anti_join(zori_df, by = "zip_code") |> nrow()` ZIP codes appear in the ZIP code dataset but not in the Zillow Rental Price dataset. 
     * These are the zipcodes below: `r zip_codes_df |> anti_join(zori_df, by = "zip_code") |> pull(zip_code)`
