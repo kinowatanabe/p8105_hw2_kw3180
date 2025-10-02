@@ -146,9 +146,12 @@ zip_codes_df =
     mutate(county = 
              case_match(county,
                         "New York" ~ "Manhattan", .default = county),
-            zip_code = as.character(zip_code)) |> 
-    select(county, zip_code, neighborhood, everything(), -state_fips, - county_code, -county_fips, - file_date)
-    
+            zip_code = as.character(zip_code),
+           county = if_else(zip_code == "11693", "Queens", county), 
+           county = if_else(zip_code == "11201", "Kings", county)) |> 
+    select(county, zip_code, neighborhood, everything(), -state_fips, - county_code, -county_fips, - file_date) |> 
+    distinct(zip_code, .keep_all = TRUE)
+
 ```
 
 ### Load Zillow Observed Rent Index (ZORI) in New York City between January 2015 and August 2024
@@ -172,6 +175,15 @@ zori_df =
         select(county, zip_code, date, rental_price, everything(),-state_name) |> 
         arrange(date)
 ```
+
+Cross reference for wrong coding errors for zipcode and county
+```{r}
+d1 = anti_join(zip_codes_df,zori_df, by = c("zip_code", "county")) 
+
+d2 = anti_join(zori_df, zip_codes_df, by = c("zip_code", "county"))
+```
+
+
 ### Merge zori_df and zip_codes_df
 We want to priortize zori_df with the date and price information. We will now merge zori_df and zip_codes_df.
 
@@ -186,15 +198,25 @@ Make a table to compare rental prices in January 2021 to prices in January 2020
 zip_zori_sep_df <-zip_zori_df |> 
   separate(date, into = c("year", "month", "day"), convert = TRUE) |> 
   filter(year %in% c(2020, 2021), month == 1, day == 31) |> 
-  select(zip_code, county, neighborhood, year, month, rental_price) |>
   pivot_wider(
     names_from = year,
-    values_from = rental_price) |> 
-  mutate(price_diff = `2021` - `2020`) |> 
+    values_from = rental_price) |>
+  mutate(
+    borough = case_match(
+      county,
+      "Kings" ~ "Brooklyn",
+      "Richmond" ~ "Staten Island",
+      "New York" ~ "Manhattan",
+      "Queens" ~ "Queens",
+      "Bronx" ~ "Bronx",
+      .default = county),
+      price_diff = `2021` - `2020`) |> 
+  select(zip_code, borough, neighborhood, `2020`, `2021`, price_diff) |> 
   arrange(price_diff) |> slice_head(n = 10)
 ```
 
-* There are `r nrow(zip_zori_df)` observations and `r ncol(zip_zori_df)` variables. There are key variables, such as `county`, `zip_code`, `neighborhood`, `date`, and `rental_price`. We are able to see 
+* There are `r nrow(zip_zori_df)` observations and `r ncol(zip_zori_df)` variables. There are key variables, such as `county`, `zip_code`, `neighborhood`, `date`, and `rental_price`.
+
 * In `zip_zori_df`, there are `r zip_zori_df |> summarise(unique_zips = n_distinct(zip_code)) |> pull(unique_zips)` unique zip codes and `r zip_zori_df |> drop_na(neighborhood) |> summarise(unique_neigh = n_distinct(neighborhood)) |>  pull(unique_neigh)` unique neighborhoods.
 
 * `r zip_codes_df |> anti_join(zori_df, by = "zip_code") |> nrow()` ZIP codes appear in the ZIP code dataset but not in the Zillow Rental Price dataset. 
